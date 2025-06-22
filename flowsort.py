@@ -35,19 +35,11 @@ class Config(BaseModel):
     """Configuration for FlowSort file organization system."""
 
     base_path: Path = Field(default_factory=lambda: Path.home())
-    inbox_path: Optional[Path] = Field(
-        default_factory=lambda data: Path(data["base_path"], Path("INBOX"))
-    )
-    documents_path: Optional[Path] = Field(
-        default_factory=lambda data: Path(data["base_path"], Path("DOCUMENTS"))
-    )
-    archive_path: Optional[Path] = Field(
-        default_factory=lambda data: Path(data["base_path"], Path("ARCHIVE"))
-    )
+    inbox_path: Optional[Path] = Field(default=None)
+    documents_path: Optional[Path] = Field(default=None)
+    archive_path: Optional[Path] = Field(default=None)
     downloads_path: Path = Field(default_factory=lambda: Path.home() / "Downloads")
-    system_path: Optional[Path] = Field(
-        default_factory=lambda data: Path(data["base_path"], Path("SYSTEM"))
-    )
+    system_path: Optional[Path] = Field(default=None)
 
     # Time rules (in days)
     inbox_to_documents_days: int = Field(default=7, ge=1, le=365)
@@ -79,6 +71,17 @@ class Config(BaseModel):
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True, json_encoders={Path: str})
+
+    def model_post_init(self, __context):
+        """Set derived paths after model initialization."""
+        if self.inbox_path is None:
+            self.inbox_path = self.base_path / "INBOX"
+        if self.documents_path is None:
+            self.documents_path = self.base_path / "DOCUMENTS"
+        if self.archive_path is None:
+            self.archive_path = self.base_path / "ARCHIVE"
+        if self.system_path is None:
+            self.system_path = self.base_path / "SYSTEM"
 
     @field_validator("base_path", "downloads_path", mode="before")
     @classmethod
@@ -269,6 +272,9 @@ class FlowSort:
                 self.config.categories.keys() if self.config.categories else []
             ):
                 directories.append(base_path / category)
+            
+            # Always create a "misc" directory for unclassified files
+            directories.append(base_path / "misc")
 
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
@@ -417,7 +423,7 @@ def init(
         raise typer.Exit(1)
 
 
-@app.command()
+@app.command(name="config")
 def config_cmd(
     show: bool = typer.Option(False, "--show", "-s", help="Show current configuration"),
     edit_base_path: Optional[str] = typer.Option(
