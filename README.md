@@ -42,12 +42,13 @@ flowsort status
 3. [File Flow Methodology](#file-flow-methodology)
 4. [Directory Structure](#directory-structure)
 5. [Classification System](#classification-system)
-6. [Usage Guide](#usage-guide)
-7. [Configuration](#configuration)
-8. [Time-Based Rules](#time-based-rules)
-9. [Architecture](#architecture)
-10. [Advanced Features](#advanced-features)
-11. [Best Practices](#best-practices)
+6. [Tagging System](#tagging-system)
+7. [Usage Guide](#usage-guide)
+8. [Configuration](#configuration)
+9. [Time-Based Rules](#time-based-rules)
+10. [Architecture](#architecture)
+11. [Advanced Features](#advanced-features)
+12. [Best Practices](#best-practices)
 
 ---
 
@@ -222,6 +223,251 @@ Planned enhancement for content-based classification:
 
 ---
 
+## Tagging System
+
+FlowSort includes a powerful xattr-based tagging system that stores metadata directly in file extended attributes, providing seamless integration with desktop environments like KDE, GNOME, and others.
+
+### Key Features
+
+- **Cross-Platform Compatibility**: Works on Linux, macOS, and modern Windows filesystems
+- **Desktop Integration**: Compatible with KDE Dolphin, GNOME Files, and other file managers
+- **Dual Namespace Support**: Supports both FlowSort tags and XDG standard tags
+- **Automatic Tagging**: Files automatically get tagged with their categories
+- **Custom Tags**: Add your own tags for better organization
+- **Metadata Preservation**: Tags persist when files are moved or copied
+
+### XDG Compatibility
+
+FlowSort supports the freedesktop.org XDG tags standard (`user.xdg.tags`), ensuring compatibility with desktop environments:
+
+#### Desktop Environment Integration
+- **KDE Dolphin**: Tags appear in the file properties and can be edited
+- **GNOME Files**: Tags visible in file metadata
+- **Other File Managers**: Any tool supporting XDG tags works seamlessly
+
+#### Dual Namespace Strategy
+```bash
+# FlowSort namespace (internal metadata)
+user.flowsort.category     # File category (images, documents, etc.)
+user.flowsort.confidence   # Classification confidence score
+user.flowsort.tags         # FlowSort custom tags
+
+# XDG namespace (desktop standard)
+user.xdg.tags             # Standard tags visible to desktop environments
+```
+
+### Basic Tagging Commands
+
+#### View File Tags
+```bash
+# Show all tags for a file
+flowsort tags /path/to/file.pdf
+
+# Show complete metadata
+flowsort tags /path/to/file.pdf --metadata
+
+# List tags only
+flowsort tags /path/to/file.pdf --list
+```
+
+#### Add Custom Tags
+```bash
+# Add single tag
+flowsort tags /path/to/file.pdf --add "important"
+
+# Add multiple tags
+flowsort tags /path/to/file.pdf --add "work,project,draft"
+
+# Tags are automatically merged with existing ones
+flowsort tags /path/to/file.pdf --add "final"
+```
+
+#### Remove Tags
+```bash
+# Remove specific tags
+flowsort tags /path/to/file.pdf --remove "draft,old"
+
+# Clear all FlowSort tags (including XDG tags)
+flowsort tags /path/to/file.pdf --clear
+```
+
+### Bulk Tagging Operations
+
+#### Re-tag Files
+```bash
+# Re-apply automatic category tags to a single file
+flowsort retag --path /path/to/file.pdf --force
+
+# Re-tag entire directory
+flowsort retag --path /path/to/directory --recursive --force
+
+# Re-tag all files in INBOX
+flowsort retag --recursive --force
+
+# Dry run to see what would be tagged
+flowsort retag --path /path/to/directory --recursive --dry-run
+```
+
+#### View Recent Files with Tags
+```bash
+# Show recent files in INBOX with their tags
+flowsort recent --location inbox --count 10 --tags
+
+# Show recent files in DOCUMENTS
+flowsort recent --location documents --count 5 --tags
+
+# Show recent files without tag information
+flowsort recent --location archive --count 20 --no-tags
+```
+
+### Tagging Configuration
+
+#### Configure Tagging System
+```bash
+# Enable/disable tagging system
+flowsort config --enable-tagging
+flowsort config --disable-tagging
+
+# Enable/disable automatic category tagging
+flowsort config --auto-tag
+flowsort config --no-auto-tag
+
+# Enable/disable XDG compatibility
+flowsort config --xdg-compat
+flowsort config --no-xdg-compat
+
+# Choose preferred namespace for writing tags
+flowsort config --prefer-xdg      # Write to XDG namespace first
+flowsort config --prefer-flowsort # Write to FlowSort namespace only
+
+# Control tag preservation behavior
+flowsort config --preserve-tags   # Merge with existing tags (default)
+flowsort config --replace-tags    # Replace existing tags
+```
+
+#### View Tagging Configuration
+```bash
+flowsort config --show
+```
+
+Sample output:
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Setting                ┃ Value                                  ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Enable Tagging         │ ✓                                      │
+│ Auto Tag Categories    │ ✓                                      │
+│ XDG Compatibility      │ ✓                                      │
+│ Prefer XDG Tags        │ ✓                                      │
+│ Preserve Existing Tags │ ✓                                      │
+│ Tag Namespace          │ user.flowsort                          │
+└────────────────────────┴────────────────────────────────────────┘
+```
+
+### Advanced Tagging Workflows
+
+#### Project-Based Organization
+```bash
+# Tag files for a specific project
+flowsort tags project_file.pdf --add "project-alpha,client-work,priority"
+
+# Find all project files using desktop search
+# (KDE: search for tag "project-alpha" in Dolphin)
+```
+
+#### Workflow States
+```bash
+# Mark files by workflow state
+flowsort tags document.pdf --add "review-needed"
+flowsort tags document.pdf --add "approved" --remove "review-needed"
+flowsort tags document.pdf --add "archived" --remove "approved"
+```
+
+#### Collaborative Tagging
+```bash
+# Tag files for team collaboration
+flowsort tags report.pdf --add "shared,team-review,deadline-friday"
+
+# Tags are preserved when files are shared via network drives
+```
+
+### Desktop Environment Integration
+
+#### KDE Dolphin
+1. **Viewing Tags**: Right-click file → Properties → Details tab
+2. **Editing Tags**: Dolphin's tag panel shows FlowSort tags
+3. **Searching**: Use Dolphin's search to find tagged files
+4. **Adding Tags**: Tags added in Dolphin appear in FlowSort
+
+#### GNOME Files
+1. **Viewing Tags**: Right-click file → Properties → Details
+2. **Custom Tags**: Use FlowSort commands for advanced tagging
+
+#### Terminal Integration
+```bash
+# View all xattrs on a file
+getfattr -d /path/to/file.pdf
+
+# Example output:
+# user.flowsort.category="documents"
+# user.flowsort.confidence="0.9"
+# user.xdg.tags="project-alpha,important,documents"
+```
+
+### Migration and Compatibility
+
+#### Migrating Existing Tags
+```bash
+# Re-tag all files to ensure XDG compatibility
+flowsort retag --recursive --force
+
+# This updates files to current tagging standards
+```
+
+#### Backup Considerations
+- Tags are stored in file metadata, not separate databases
+- Tags are preserved during file copies and moves
+- Standard backup tools preserve extended attributes
+- Cloud storage may or may not preserve xattrs (varies by service)
+
+### Troubleshooting
+
+#### Common Issues
+
+**Tags Not Visible in Desktop**:
+```bash
+# Check if XDG compatibility is enabled
+flowsort config --show | grep "XDG Compatibility"
+
+# Enable XDG compatibility if needed
+flowsort config --xdg-compat
+```
+
+**Tags Not Being Set**:
+```bash
+# Check if tagging is enabled
+flowsort config --show | grep "Enable Tagging"
+
+# Re-tag files to apply current settings
+flowsort retag --path /path/to/file --force
+```
+
+**Filesystem Compatibility**:
+```bash
+# Test if filesystem supports extended attributes
+flowsort tags test_file.txt --add "test-tag"
+
+# If this fails, the filesystem doesn't support xattrs
+```
+
+#### Performance Considerations
+- Extended attributes have minimal performance impact
+- Tagging operations are fast (< 1ms per file)
+- Large-scale retagging operations may take time on thousands of files
+- Network filesystems may have slower xattr operations
+
+---
+
 ## Time-Based Rules
 
 ### Default Timeframes
@@ -332,6 +578,25 @@ flowsort config --downloads ~/Downloads
 flowsort config --inbox-days 5
 flowsort config --docs-days 45
 flowsort config --archive-days 120
+
+# Configure tagging system
+flowsort config --enable-tagging --xdg-compat --prefer-xdg
+flowsort config --auto-tag --preserve-tags
+```
+
+### Tagging Commands
+
+```bash
+# Manage file tags
+flowsort tags file.pdf --add "important,work"
+flowsort tags file.pdf --remove "draft"
+flowsort tags file.pdf --list
+
+# Bulk retagging
+flowsort retag --recursive --force
+
+# View recent files with tags
+flowsort recent --location inbox --tags
 ```
 
 ### Daily Workflow
@@ -362,7 +627,13 @@ flowsort config --archive-days 120
     "documents": [".pdf", ".doc", ".docx", ...],
     "images": [".jpg", ".png", ".gif", ...],
     ...
-  }
+  },
+  "enable_tagging": true,
+  "tag_namespace": "user.flowsort",
+  "auto_tag_categories": true,
+  "preserve_existing_tags": true,
+  "xdg_tags_compatibility": true,
+  "prefer_xdg_tags": true
 }
 ```
 
