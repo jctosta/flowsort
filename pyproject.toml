@@ -1,0 +1,11 @@
+[project]
+name = "flowsort"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.11.7",
+    "rich>=14.0.0",
+    "typer>=0.16.0",
+]
